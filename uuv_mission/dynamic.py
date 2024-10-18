@@ -76,7 +76,13 @@ class Mission:
     @classmethod
     def from_csv(cls, file_name: str):
         # You are required to implement this method
-        pass
+        with open('mission.csv','r') as csvfile:
+            reader = csv.reader(csvfile)
+            reference = [row[0] for row in reader]
+            cave_height = [row[1] for row in reader]
+            cave_depth = [row[2] for row in reader]
+        return(reference, cave_height,cave_depth)
+
 
 
 class ClosedLoop:
