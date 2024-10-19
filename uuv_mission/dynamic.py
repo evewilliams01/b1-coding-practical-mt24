@@ -1,8 +1,13 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from .terrain import generate_reference_and_limits
+from terrain import generate_reference_and_limits
+import os
+import csv
+import glob
+from control import pd_controller
 
 class Submarine:
     def __init__(self):
@@ -75,14 +80,14 @@ class Mission:
 
     @classmethod
     def from_csv(cls, file_name: str):
-        # You are required to implement this method
-        with open('mission.csv','r') as csvfile:
-            reader = csv.reader(csvfile)
-            reference = [row[0] for row in reader]
-            cave_height = [row[1] for row in reader]
-            cave_depth = [row[2] for row in reader]
-        return(reference, cave_height,cave_depth)
-
+        reference, cave_height, cave_depth = [], [], []
+        with open(file_name, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                reference.append(float(row['reference']))
+                cave_height.append(float(row['cave_height']))
+                cave_depth.append(float(row['cave_depth']))
+        return cls(np.array(reference), np.array(cave_height), np.array(cave_depth))
 
 
 class ClosedLoop:
@@ -100,14 +105,24 @@ class ClosedLoop:
         actions = np.zeros(T)
         self.plant.reset_state()
 
+        e_tminus1 = float(mission.reference[0]) - float(self.plant.get_depth())
+
+
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            # Call your controller here
-            self.plant.transition(actions[t], disturbances[t])
-
+            [e_tminus1, u_t] = pd_controller(mission.reference[t],observation_t, e_tminus1)
+            actions[t] = u_t
+            self.plant.transition(u_t, disturbances[t])
         return Trajectory(positions)
         
     def simulate_with_random_disturbances(self, mission: Mission, variance: float = 0.5) -> Trajectory:
         disturbances = np.random.normal(0, variance, len(mission.reference))
         return self.simulate(mission, disturbances)
+
+sub = Submarine()
+closed_loop = ClosedLoop(sub, pd_controller)
+csv_path = '/Users/evewilliams/Documents/B1_1/b1-coding-practical-mt24/data/mission.csv'
+mission = Mission.from_csv(csv_path)
+trajectory = closed_loop.simulate_with_random_disturbances(mission, variance=0.5)
+trajectory.plot_completed_mission(mission)
