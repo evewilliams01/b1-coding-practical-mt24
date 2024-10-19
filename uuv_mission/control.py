@@ -1,5 +1,5 @@
 
-def pd_controller(reference, depth, e_tminus1, Kp=0.15, Kd=0.6):
+def pd_controller(reference, depth, e_tminus1, Kp=0.12, Kd=0.65):
     # PD controller for UUV
     
     #Calc error at current time step
