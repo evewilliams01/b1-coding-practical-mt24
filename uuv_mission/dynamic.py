@@ -4,9 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from terrain import generate_reference_and_limits
-import os
 import csv
-import glob
 from control import pd_controller
 
 class Submarine:
